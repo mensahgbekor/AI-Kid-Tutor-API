@@ -1,5 +1,5 @@
 import { UserModel } from "../models/users.js"
-import { loginUserValidator, resgisterUserValidator } from "../validators/users.js"
+import { loginUserValidator, resetPasswordValidator, resgisterUserValidator, updatePasswordValidator } from "../validators/users.js"
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
@@ -67,9 +67,75 @@ export const loginUser = async (req, res, next) => {
             }
         );
         // Send success response
-        return res.status(200).json({ message:"User logged in Successfully", accessToken: token});
+        return res.status(200).json({ message: "User logged in Successfully", accessToken: token });
 
     } catch (error) {
         next(error);
     }
-}
+};
+
+// Update Password Controller
+export const updatePassword = async (req, res, next) => {
+    try {
+        // Validate User input
+        const { error, value } = updatePasswordValidator.validate(req.body);
+
+        if (error) {
+            return res.status(422).json(error);
+        }
+
+        // Find user
+        const user = await UserModel.findOne({ email: value.email });
+
+        if (!user) {
+            return res.status(404).json("User not found");
+        }
+
+        // Check password
+        const isPasswordValid = bcrypt.compareSync(value.oldPassword, user.password);
+
+        if (!isPasswordValid) {
+            return res.status(401).json("Invalid Credentials");
+        }
+
+        // Hash Password
+        const hashedPassword = bcrypt.hashSync(value.newPassword, 10);
+
+        // Update password
+        await UserModel.updateOne({ email: value.email }, { $set: { password: hashedPassword } });
+
+        return res.status(200).json("Password updated successfully");
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Reset Password Controller
+export const resetPassword = async (req, res, next) => {
+    try {
+        // Validate User input
+        const { error, value } = resetPasswordValidator.validate(req.body);
+
+        if (error) {
+            return res.status(422).json(error);
+        }
+
+        // Find user
+        const user = await UserModel.findOne({ email: value.email });
+
+        if (!user) {
+            return res.status(404).json("User not found");
+        };
+
+        //Hash Password
+        const hashedPassword = bcrypt.hashSync(value.password, 10);
+
+        // Update password
+        await UserModel.updateOne({ email: value.email }, { $set: { password: hashedPassword } });
+
+        return res.status(200).json("Password reset successfully");
+    }
+    catch (error) {
+        next(error);
+    }
+};
