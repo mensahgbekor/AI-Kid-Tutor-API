@@ -1,8 +1,11 @@
+import dotenv from "dotenv";
 import express from "express";
 import cors from "cors";
 import mongoose from "mongoose";
 import userRouter from "./routes/users.js";
 
+// Load environment variables
+dotenv.config();
 
 // Initialize app
 const app = express();
